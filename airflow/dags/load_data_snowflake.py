@@ -48,4 +48,44 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_customers',
+    sql="""
+    USE DATABASE northwind;
+    CREATE OR REPLACE TEMPORARY TABLE staging_customers LIKE raw.customers;
+
+    COPY INTO staging_customers
+    FROM 's3://desafio-indicium/northwind/customers.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    MERGE INTO raw.customers AS target
+        USING staging_customers AS source
+        ON target.customer_id = source.customer_id
+        WHEN MATCHED THEN
+        UPDATE SET
+            target.company_name = source.company_name,
+            target.contact_name = source.contact_name,
+            target.contact_title = source.contact_title,
+            target.address = source.address,
+            target.city = source.city,
+            target.region = source.region,
+            target.postal_code = source.postal_code,
+            target.country = source.country,
+            target.phone = source.phone,
+            target.fax = source.fax
+            
+            
+        WHEN NOT MATCHED THEN
+        INSERT (customer_id, company_name, contact_name, contact_title,
+        address, city, region, postal_code, country, phone, fax
+        
+        ) VALUES (customer_id, company_name, contact_name, contact_title,
+        address, city, region, postal_code, country, phone, fax
+        );
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 load_data 
