@@ -14,7 +14,7 @@ default_args = {
 dag = DAG(
     'load_data_snowflake',
     default_args=default_args,
-    schedule_interval=None, 
+    schedule_interval='0 0 * * *', 
     start_date=days_ago(1),
     catchup=False,
 )
