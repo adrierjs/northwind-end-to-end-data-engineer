@@ -161,4 +161,25 @@ norhwind_clean = SnowflakeOperator(
     dag=dag,
 )
 
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_order_products',
+    sql="""
+    create or replace table clean.northwing.products CLUSTER BY (product_id) copy grants as 
+    select
+        product_id,
+        upper(product_name) as product_name,
+        supplier_id,
+        category_id,
+        upper(quantity_per_unit) as quantity_per_unit,
+        unit_price,
+        units_in_stock,
+        units_on_order,
+        reorder_level,
+        discontinued
+    from northwind.raw.products;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 norhwind_clean
