@@ -286,5 +286,35 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_order_details',
+    sql="""
+    USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_order_details LIKE raw.order_details;
+
+    -- Carregar dados na tabela de staging
+    COPY INTO staging_order_details
+    FROM 's3://desafio-indicium/northwind/order_details.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    MERGE INTO NORTHWIND.RAW.ORDER_DETAILS AS target
+    USING staging_order_details AS source
+    ON target.order_id = source.order_id
+    AND target.product_id = source.product_id
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.unit_price = source.unit_price,
+            target.quantity = source.quantity,
+            target.discount = source.discount
+    WHEN NOT MATCHED THEN
+        INSERT (order_id, product_id, unit_price, quantity, discount)
+        VALUES (source.order_id, source.product_id, source.unit_price, source.quantity, source.discount);
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 
 load_data 
