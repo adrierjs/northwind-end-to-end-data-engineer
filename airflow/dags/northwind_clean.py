@@ -107,4 +107,17 @@ norhwind_clean = SnowflakeOperator(
     dag=dag,
 )
 
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_employee_territories',
+    sql="""
+    create or replace table clean.northwing.employee_territories CLUSTER BY (employee_id) copy grants as 
+    select
+        employee_id,
+        territory_id
+    from northwind.raw.employee_territories;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 norhwind_clean
