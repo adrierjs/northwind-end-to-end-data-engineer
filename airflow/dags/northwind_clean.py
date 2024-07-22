@@ -209,4 +209,27 @@ norhwind_clean = SnowflakeOperator(
     dag=dag,
 )
 
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_suppliers',
+    sql="""
+    create or replace table clean.northwing.suppliers CLUSTER BY (shipper_id) copy grants as 
+    select
+        supplier_id,
+        upper(company_name) as company_name,
+        upper(contact_name) as contact_name,
+        upper(contact_title) as contact_title,
+        upper(address) as address,
+        upper(city) as city,
+        upper(region) as region,
+        upper(postal_code) as postal_code,
+        upper(country) as country,
+        phone,
+        fax,
+        upper(homepage) as homepage
+    from northwind.raw.suppliers;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 norhwind_clean
