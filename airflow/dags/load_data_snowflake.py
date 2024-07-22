@@ -324,7 +324,7 @@ load_data = SnowflakeOperator(
 )
 
 load_data = SnowflakeOperator(
-    task_id='load_and_merge_products',
+    task_id='load_and_merge_region',
     sql="""
     USE DATABASE northwind;
 
