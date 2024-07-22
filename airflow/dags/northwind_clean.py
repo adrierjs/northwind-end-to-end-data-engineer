@@ -68,11 +68,40 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_customer_demographics',
     sql="""
-    create or replace table clean.northwing.customer_customer_demo CLUSTER BY (customer_id) copy grants as 
+    create or replace table clean.northwing.customer_customer_demo CLUSTER BY (customer_type_id) copy grants as 
     select
         upper(customer_type_id) as customer_type_id,
         upper(customer_desc) as customer_desc
     from northwind.raw.customer_demographics;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_employees',
+    sql="""
+    create or replace table clean.northwing.employees CLUSTER BY (employee_id) copy grants as 
+    select
+        employee_id,
+        upper(last_name) as last_name,
+        upper(first_name) as first_name,
+        upper(title) as title,
+        upper(title_of_courtesy) as title_of_courtesy,
+        birth_date,
+        hire_date,
+        upper(address) as address,
+        upper(city) as city,
+        upper(region) as region,
+        upper(postal_code) as postal_code,
+        upper(country) as country,
+        upper(home_phone) as home_phone,
+        upper(extension) as extension,
+        upper(photo) as photo,
+        upper(notes) as notes,
+        reports_to,
+        upper(photo_path) as photo_path
+    from northwind.raw.employees;
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
