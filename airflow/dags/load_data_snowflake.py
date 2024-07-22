@@ -378,5 +378,41 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_suppliers',
+    sql="""
+    USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_suppliers LIKE raw.suppliers;
+
+    -- Carregar dados na tabela de staging
+    COPY INTO staging_suppliers
+    FROM 's3://desafio-indicium/northwind/suppliers.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    MERGE INTO NORTHWIND.RAW.SUPPLIERS AS target
+    USING staging_suppliers AS source
+    ON target.supplier_id = source.supplier_id
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.company_name = source.company_name,
+            target.contact_name = source.contact_name,
+            target.contact_title = source.contact_title,
+            target.address = source.address,
+            target.city = source.city,
+            target.region = source.region,
+            target.postal_code = source.postal_code,
+            target.country = source.country,
+            target.phone = source.phone,
+            target.fax = source.fax,
+            target.homepage = source.homepage
+    WHEN NOT MATCHED THEN
+        INSERT (supplier_id, company_name, contact_name, contact_title, address, city, region, postal_code, country, phone, fax, homepage)
+        VALUES (source.supplier_id, source.company_name, source.contact_name, source.contact_title, source.address, source.city, source.region, source.postal_code, source.country, source.phone, source.fax, source.homepage);
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
 
 load_data 
