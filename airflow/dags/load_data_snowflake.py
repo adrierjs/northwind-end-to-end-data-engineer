@@ -194,11 +194,11 @@ load_data = SnowflakeOperator(
     sql="""
     USE DATABASE northwind;
 
-    CREATE OR REPLACE TEMPORARY TABLE staging_EMPLOYEE_TERRITORIES LIKE raw.employees;
+    CREATE OR REPLACE TEMPORARY TABLE staging_employees_territories LIKE raw.employees;
 
     -- Carregar dados na tabela de staging
-    COPY INTO staging_employees
-    FROM 's3://desafio-indicium/northwind/EMPLOYEE_TERRITORIES.csv'
+    COPY INTO staging_employees_territories
+    FROM 's3://desafio-indicium/northwind/employees_territories.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
