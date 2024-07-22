@@ -65,4 +65,17 @@ norhwind_clean = SnowflakeOperator(
     dag=dag,
 )
 
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_customer_demographics',
+    sql="""
+    create or replace table clean.northwing.customer_customer_demo CLUSTER BY (customer_id) copy grants as 
+    select
+        upper(customer_type_id) as customer_type_id,
+        upper(customer_desc) as customer_desc
+    from northwind.raw.customer_demographics;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 norhwind_clean
