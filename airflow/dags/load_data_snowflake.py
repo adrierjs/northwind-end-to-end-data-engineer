@@ -443,4 +443,33 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_us_states',
+    sql="""
+     USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_us_states LIKE raw.us_states;
+
+    -- Carregar dados na tabela de staging
+    COPY INTO staging_us_states
+    FROM 's3://desafio-indicium/northwind/us_states.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    MERGE INTO NORTHWIND.RAW.US_STATES AS target
+    USING staging_us_states AS source
+    ON target.state_id = source.state_id
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.state_name = source.state_name,
+            target.state_abbr = source.state_abbr,
+            target.state_region = source.state_region
+    WHEN NOT MATCHED THEN
+        INSERT (state_id, state_name, state_abbr, state_region)
+        VALUES (source.state_id, source.state_name, source.state_abbr, source.state_region);
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 load_data 
