@@ -323,5 +323,32 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_products',
+    sql="""
+    USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_region LIKE raw.region;
+
+    -- Carregar dados na tabela de staging
+    COPY INTO staging_region
+    FROM 's3://desafio-indicium/northwind/region.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    MERGE INTO NORTHWIND.RAW.REGION AS target
+    USING staging_region AS source
+    ON target.region_id = source.region_id
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.region_description = source.region_description
+    WHEN NOT MATCHED THEN
+        INSERT (region_id, region_description)
+        VALUES (source.region_id, source.region_description);
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 
 load_data 
