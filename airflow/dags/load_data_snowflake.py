@@ -117,4 +117,33 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_customer_demographics',
+    sql="""
+    USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_customer_demographics LIKE raw.customer_demographics;
+
+    -- Carregar dados na tabela de staging
+    COPY INTO staging_customer_demographics
+    FROM 's3://desafio-indicium/northwind/customer_customer_demographics.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    -- Inserir dados únicos na tabela final
+    MERGE INTO raw.customer_demographics AS target
+    USING staging_customer_demographics AS source
+    ON target.customer_type_id = source.customer_type_id
+    WHEN MATCHED THEN
+    UPDATE SET
+        target.customer_type_id = source.customer_type_id,
+        target.customer_desc = source.customer_desc
+    WHEN NOT MATCHED THEN
+    INSERT (customer_type_id, customer_desc) VALUES (source.customer_type_id, source.customer_desc
+    );
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 load_data 
