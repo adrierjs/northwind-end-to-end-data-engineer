@@ -218,5 +218,73 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_employee_territories',
+    sql="""
+    MERGE INTO NORTHWIND.RAW.ORDERS AS target
+USING staging_orders AS source
+ON target.order_id = source.order_id
+WHEN MATCHED THEN
+    UPDATE SET
+        target.customer_id = source.customer_id,
+        target.employee_id = source.employee_id,
+        target.order_date = source.order_date,
+        target.required_date = source.required_date,
+        target.shipped_date = source.shipped_date,
+        target.ship_via = source.ship_via,
+        target.freight = source.freight,
+        target.ship_name = source.ship_name,
+        target.ship_address = source.ship_address,
+        target.ship_city = source.ship_city,
+        target.ship_region = source.ship_region,
+        target.ship_postal_code = source.ship_postal_code,
+        target.ship_country = source.ship_country
+WHEN NOT MATCHED THEN
+    INSERT (order_id, customer_id, employee_id, order_date, required_date, shipped_date, ship_via, freight, ship_name, ship_address, ship_city, ship_region, ship_postal_code, ship_country)
+    VALUES (source.order_id, source.customer_id, source.employee_id, source.order_date, source.required_date, source.shipped_date, source.ship_via, source.freight, source.ship_name, source.ship_address, source.ship_city, source.ship_region, source.ship_postal_code, source.ship_country);
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_orders',
+    sql="""
+    USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_orders LIKE raw.orders;
+
+    -- Carregar dados na tabela de staging
+    COPY INTO staging_orders
+    FROM 's3://desafio-indicium/northwind/orders.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    MERGE INTO NORTHWIND.RAW.ORDERS AS target
+    USING staging_orders AS source
+    ON target.order_id = source.order_id
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.customer_id = source.customer_id,
+            target.employee_id = source.employee_id,
+            target.order_date = source.order_date,
+            target.required_date = source.required_date,
+            target.shipped_date = source.shipped_date,
+            target.ship_via = source.ship_via,
+            target.freight = source.freight,
+            target.ship_name = source.ship_name,
+            target.ship_address = source.ship_address,
+            target.ship_city = source.ship_city,
+            target.ship_region = source.ship_region,
+            target.ship_postal_code = source.ship_postal_code,
+            target.ship_country = source.ship_country
+    WHEN NOT MATCHED THEN
+        INSERT (order_id, customer_id, employee_id, order_date, required_date, shipped_date, ship_via, freight, ship_name, ship_address, ship_city, ship_region, ship_postal_code, ship_country)
+        VALUES (source.order_id, source.customer_id, source.employee_id, source.order_date, source.required_date, source.shipped_date, source.ship_via, source.freight, source.ship_name, source.ship_address, source.ship_city, source.ship_region, source.ship_postal_code, source.ship_country);
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 
 load_data 
