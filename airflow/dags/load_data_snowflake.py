@@ -189,6 +189,34 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_employee_territories',
+    sql="""
+    USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_EMPLOYEE_TERRITORIES LIKE raw.employees;
+
+    -- Carregar dados na tabela de staging
+    COPY INTO staging_employees
+    FROM 's3://desafio-indicium/northwind/EMPLOYEE_TERRITORIES.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    MERGE INTO NORTHWIND.RAW.EMPLOYEE_TERRITORIES AS target
+    USING staging_employee_territories AS source
+    ON target.employee_id = source.employee_id
+    AND target.territory_id = source.territory_id
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.employee_id = source.employee_id, 
+            target.territory_id = source.territory_id
+    WHEN NOT MATCHED THEN
+        INSERT (employee_id, territory_id)
+        VALUES (source.employee_id, source.territory_id);
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
 
 
 load_data 
