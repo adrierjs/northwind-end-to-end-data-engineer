@@ -182,4 +182,17 @@ norhwind_clean = SnowflakeOperator(
     dag=dag,
 )
 
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_region',
+    sql="""
+    create or replace table clean.northwing.products CLUSTER BY (region) copy grants as 
+    select
+        region_id,
+        upper(region_description) as region_description
+    from northwind.raw.region;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 norhwind_clean
