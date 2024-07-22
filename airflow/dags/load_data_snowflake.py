@@ -24,7 +24,8 @@ load_data = SnowflakeOperator(
     sql="""
 
     USE DATABASE northwind;
-    
+    CREATE OR REPLACE TEMPORARY TABLE staging_categories LIKE raw.categories;
+
     -- Criação de tabela temporária 
     COPY INTO staging_categories
     FROM 's3://desafio-indicium/northwind/categories.csv'
@@ -51,6 +52,7 @@ load_data = SnowflakeOperator(
     task_id='load_and_merge_customers',
     sql="""
     USE DATABASE northwind;
+    CREATE OR REPLACE TEMPORARY TABLE staging_customers LIKE raw.customers;
 
     COPY INTO staging_customers
     FROM 's3://desafio-indicium/northwind/customers.csv'
@@ -90,6 +92,8 @@ load_data = SnowflakeOperator(
     task_id='load_and_merge_customer_customer_demo',
     sql="""
     USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_customer_customer_demo LIKE raw.customer_customer_demo;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_customer_customer_demo
