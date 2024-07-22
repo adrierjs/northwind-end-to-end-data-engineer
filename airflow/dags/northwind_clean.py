@@ -145,4 +145,20 @@ norhwind_clean = SnowflakeOperator(
     dag=dag,
 )
 
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_order_details',
+    sql="""
+    create or replace table clean.northwing.order_details CLUSTER BY (order_id) copy grants as 
+    select
+        order_id,
+        product_id,
+        unit_price,
+        quantity,
+        discount
+    from northwind.raw.order_details;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 norhwind_clean
