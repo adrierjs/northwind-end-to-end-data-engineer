@@ -316,5 +316,41 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_products',
+    sql="""
+    USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_products LIKE raw.products;
+
+    -- Carregar dados na tabela de staging
+      COPY INTO staging_products
+    FROM 's3://desafio-indicium/northwind/products.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    MERGE INTO NORTHWIND.RAW.PRODUCTS AS target
+    USING staging_products AS source
+    ON target.product_id = source.product_id
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.product_name = source.product_name,
+            target.supplier_id = source.supplier_id,
+            target.category_id = source.category_id,
+            target.quantity_per_unit = source.quantity_per_unit,
+            target.unit_price = source.unit_price,
+            target.units_in_stock = source.units_in_stock,
+            target.units_on_order = source.units_on_order,
+            target.reorder_level = source.reorder_level,
+            target.discontinued = source.discontinued
+    WHEN NOT MATCHED THEN
+        INSERT (product_id, product_name, supplier_id, category_id, quantity_per_unit, unit_price, units_in_stock, units_on_order, reorder_level, discontinued)
+        VALUES (source.product_id, source.product_name, source.supplier_id, source.category_id, source.quantity_per_unit, source.unit_price, source.units_in_stock, source.units_on_order, source.reorder_level, source.discontinued);
+
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 
 load_data 
