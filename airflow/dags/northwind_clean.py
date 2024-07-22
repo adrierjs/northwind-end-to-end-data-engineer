@@ -185,11 +185,25 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_region',
     sql="""
-    create or replace table clean.northwing.products CLUSTER BY (region) copy grants as 
+    create or replace table clean.northwing.products CLUSTER BY (region_id) copy grants as 
     select
         region_id,
         upper(region_description) as region_description
     from northwind.raw.region;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_shippers',
+    sql="""
+    create or replace table clean.northwing.shippers CLUSTER BY (shipper_id) copy grants as 
+    select
+        shipper_id,
+        upper(company_name) as company_name,
+        upper(phone) as phone
+    from northwind.raw.shippers;
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
