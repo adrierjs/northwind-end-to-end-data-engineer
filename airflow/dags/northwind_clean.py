@@ -120,4 +120,29 @@ norhwind_clean = SnowflakeOperator(
     dag=dag,
 )
 
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_orders',
+    sql="""
+    create or replace table clean.northwing.orders CLUSTER BY (order_id) copy grants as 
+    select
+        order_id,
+        upper(customer_id) as customer_id,
+        employee_id,
+        order_date,
+        required_date,
+        shipped_date,
+        ship_via,
+        freight,
+        upper(ship_name) as ship_name,
+        upper(ship_address) as ship_address,
+        upper(ship_city) as ship_city,
+        upper(ship_region) as ship_region,
+        upper(ship_postal_code) as ship_postal_code,
+        upper(ship_country) as ship_country
+    from northwind.raw.orders;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 norhwind_clean
