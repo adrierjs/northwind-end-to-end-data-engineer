@@ -219,7 +219,7 @@ load_data = SnowflakeOperator(
 )
 
 load_data = SnowflakeOperator(
-    task_id='load_and_merge_employee_territories',
+    task_id='load_and_merge_orders',
     sql="""
     MERGE INTO NORTHWIND.RAW.ORDERS AS target
 USING staging_orders AS source
