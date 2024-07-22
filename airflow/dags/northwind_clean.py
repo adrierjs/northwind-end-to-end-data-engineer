@@ -232,4 +232,18 @@ norhwind_clean = SnowflakeOperator(
     dag=dag,
 )
 
+norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_territories',
+    sql="""
+    create or replace table clean.northwing.territories CLUSTER BY (shipper_id) copy grants as 
+    select
+        territory_id,
+        upper(territory_description) as territory_description,
+        region_id
+    from northwind.raw.territories;
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 norhwind_clean
