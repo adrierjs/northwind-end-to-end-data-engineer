@@ -350,5 +350,33 @@ load_data = SnowflakeOperator(
     dag=dag,
 )
 
+load_data = SnowflakeOperator(
+    task_id='load_and_merge_shippers',
+    sql="""
+    USE DATABASE northwind;
+
+    CREATE OR REPLACE TEMPORARY TABLE staging_shippers LIKE raw.shippers;
+
+    -- Carregar dados na tabela de staging
+    COPY INTO staging_shippers
+    FROM 's3://desafio-indicium/northwind/shippers.csv'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
+
+    MERGE INTO NORTHWIND.RAW.SHIPPERS AS target
+    USING staging_shippers AS source
+    ON target.shipper_id = source.shipper_id
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.company_name = source.company_name,
+            target.phone = source.phone
+    WHEN NOT MATCHED THEN
+        INSERT (shipper_id, company_name, phone)
+        VALUES (source.shipper_id, source.company_name, source.phone);
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
 
 load_data 
