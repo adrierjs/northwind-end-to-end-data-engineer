@@ -197,7 +197,11 @@ norhwind_clean = SnowflakeOperator(
         units_in_stock,
         units_on_order,
         reorder_level,
-        discontinued
+        case 
+            when discontinued = '0' then 'YES'
+            when discontinued = '1' then 'NO'
+            else discontinued::text
+        end as discontinued
     from northwind.raw.products;
     """,
     snowflake_conn_id='snowflake_connection',
