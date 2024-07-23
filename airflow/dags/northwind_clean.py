@@ -149,6 +149,25 @@ norhwind_clean = SnowflakeOperator(
 )
 
 norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_orders_values',
+    sql="""
+    create or replace table clean.northwing.orders_values CLUSTER BY (order_id) copy grants as 
+    select 
+        orders.order_id, 
+        orders.customer_id, 
+        sum(orders.freight) freight, 
+        sum(order_details.unit_price) unit_price,
+        sum(order_details.quantity) quantity, 
+        sum(order_details.discount) discount 
+    from clean.northwing.orders 
+    inner join clean.northwing.order_details on order_details.order_id = orders.order_id
+    group by 1,2
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
+norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_order_details',
     sql="""
     create or replace table clean.northwing.order_details CLUSTER BY (order_id) copy grants as 
