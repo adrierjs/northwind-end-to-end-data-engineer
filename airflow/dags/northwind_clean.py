@@ -21,7 +21,7 @@ dag = DAG(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_categories',
     sql="""
-    create or replace table clean.northwing.categories CLUSTER BY (category_id) copy grants as 
+    create or replace table clean.northwind.categories CLUSTER BY (category_id) copy grants as 
     select 
         category_id, 
         upper(category_name) category_name, 
@@ -36,7 +36,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_customers',
     sql="""
-    create or replace table clean.northwing.customers CLUSTER BY (customer_id) copy grants as 
+    create or replace table clean.northwind.customers CLUSTER BY (customer_id) copy grants as 
     select
         customer_id,
         upper(company_name) as company_name,
@@ -56,22 +56,9 @@ norhwind_clean = SnowflakeOperator(
 )
 
 norhwind_clean = SnowflakeOperator(
-    task_id='snowflake_clean_customer_customer_demo',
-    sql="""
-    create or replace table clean.northwing.customer_customer_demo CLUSTER BY (category_id) copy grants as 
-    select
-        category_id,
-       customer_type_id
-    from northwind.raw.customer_customer_demo;
-    """,
-    snowflake_conn_id='snowflake_connection',
-    dag=dag,
-)
-
-norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_customer_demographics',
     sql="""
-    create or replace table clean.northwing.customer_customer_demo CLUSTER BY (customer_type_id) copy grants as 
+    create or replace table clean.northwind.customer_customer_demo CLUSTER BY (customer_type_id) copy grants as 
     select
        customer_type_id,
         upper(customer_desc) as customer_desc
@@ -84,7 +71,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_employees',
     sql="""
-    create or replace table clean.northwing.employees CLUSTER BY (employee_id) copy grants as 
+    create or replace table clean.northwind.employees CLUSTER BY (employee_id) copy grants as 
     select
         employee_id,
         upper(last_name) as last_name,
@@ -113,7 +100,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_employee_territories',
     sql="""
-    create or replace table clean.northwing.employee_territories CLUSTER BY (employee_id) copy grants as 
+    create or replace table clean.northwind.employee_territories CLUSTER BY (employee_id) copy grants as 
     select
         employee_id,
         territory_id
@@ -126,7 +113,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_orders',
     sql="""
-    create or replace table clean.northwing.orders CLUSTER BY (order_id) copy grants as 
+    create or replace table clean.northwind.orders CLUSTER BY (order_id) copy grants as 
     select
         order_id,
         upper(customer_id) as customer_id,
@@ -149,9 +136,28 @@ norhwind_clean = SnowflakeOperator(
 )
 
 norhwind_clean = SnowflakeOperator(
+    task_id='snowflake_clean_orders_values',
+    sql="""
+    create or replace table clean.northwind.orders_values CLUSTER BY (order_id) copy grants as 
+    select 
+        orders.order_id, 
+        orders.customer_id, 
+        sum(orders.freight) freight, 
+        sum(order_details.unit_price) unit_price,
+        sum(order_details.quantity) quantity, 
+        sum(order_details.discount) discount 
+    from clean.northwind.orders 
+    inner join clean.northwind.order_details on order_details.order_id = orders.order_id
+    group by 1,2
+    """,
+    snowflake_conn_id='snowflake_connection',
+    dag=dag,
+)
+
+norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_order_details',
     sql="""
-    create or replace table clean.northwing.order_details CLUSTER BY (order_id) copy grants as 
+    create or replace table clean.northwind.order_details CLUSTER BY (order_id) copy grants as 
     select
         order_id,
         product_id,
@@ -167,7 +173,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_order_products',
     sql="""
-    create or replace table clean.northwing.products CLUSTER BY (product_id) copy grants as 
+    create or replace table clean.northwind.products CLUSTER BY (product_id) copy grants as 
     select
         product_id,
         upper(product_name) as product_name,
@@ -178,7 +184,11 @@ norhwind_clean = SnowflakeOperator(
         units_in_stock,
         units_on_order,
         reorder_level,
-        discontinued
+        case 
+            when discontinued = '0' then 'YES'
+            when discontinued = '1' then 'NO'
+            else discontinued::text
+        end as discontinued
     from northwind.raw.products;
     """,
     snowflake_conn_id='snowflake_connection',
@@ -188,7 +198,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_region',
     sql="""
-    create or replace table clean.northwing.products CLUSTER BY (region_id) copy grants as 
+    create or replace table clean.northwind.products CLUSTER BY (region_id) copy grants as 
     select
         region_id,
         upper(region_description) as region_description
@@ -201,7 +211,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_shippers',
     sql="""
-    create or replace table clean.northwing.shippers CLUSTER BY (shipper_id) copy grants as 
+    create or replace table clean.northwind.shippers CLUSTER BY (shipper_id) copy grants as 
     select
         shipper_id,
         upper(company_name) as company_name,
@@ -215,7 +225,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_suppliers',
     sql="""
-    create or replace table clean.northwing.suppliers CLUSTER BY (supplier_id) copy grants as 
+    create or replace table clean.northwind.suppliers CLUSTER BY (supplier_id) copy grants as 
     select
         supplier_id,
         upper(company_name) as company_name,
@@ -238,7 +248,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_territories',
     sql="""
-    create or replace table clean.northwing.territories CLUSTER BY (territory_id) copy grants as 
+    create or replace table clean.northwind.territories CLUSTER BY (territory_id) copy grants as 
     select
         territory_id,
         upper(territory_description) as territory_description,
@@ -252,7 +262,7 @@ norhwind_clean = SnowflakeOperator(
 norhwind_clean = SnowflakeOperator(
     task_id='snowflake_clean_us_states',
     sql="""
-    create or replace table clean.northwing.us_states CLUSTER BY (state_id) copy grants as 
+    create or replace table clean.northwind.us_states CLUSTER BY (state_id) copy grants as 
     select
         state_id,
         upper(state_name) as state_name,
