@@ -5,7 +5,7 @@ from airflow.utils.dates import days_ago
 import requests
 
 def send_to_discord(context):
-    webhook_url = Variable.get('DISCORD_WEBHOOK_URL')
+    webhook_url = Variable.get("webhook_discord_url")
     task_id = context['task_instance'].task_id
     dag_id = context['dag'].dag_id
     execution_date = context['execution_date']
