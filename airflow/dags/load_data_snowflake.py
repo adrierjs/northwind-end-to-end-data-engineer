@@ -1,14 +1,39 @@
 from airflow import DAG
 from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
+from airflow.models import Variable
 from airflow.utils.dates import days_ago
+import requests
 
-# Define a DAG
+def send_to_discord(context):
+    webhook_url = Variable.get('DISCORD_WEBHOOK_URL')
+    task_id = context['task_instance'].task_id
+    dag_id = context['dag'].dag_id
+    execution_date = context['execution_date']
+    exception = context['exception']
+
+    message = {
+        'content': (
+            f"🚨 **Task Failed** 🚨\n"
+            f"**Task ID**: {task_id}\n"
+            f"**DAG ID**: {dag_id}\n"
+            f"**Execution Date**: {execution_date}\n"
+            f"**Exception**: {exception}"
+        )
+    }
+
+    try:
+        response = requests.post(webhook_url, json=message)
+        response.raise_for_status()
+        print("Notificação enviada com sucesso.")
+    except requests.exceptions.RequestException as e:
+        print(f"Falha ao enviar notificação ao Discord: {e}")
+    
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'email_on_failure': False,
-    'email_on_retry': False
-    # 'retries': 1,
+    'email_on_retry': False,
+    'on_failure_callback': send_to_discord
 }
 
 dag = DAG(
@@ -16,7 +41,7 @@ dag = DAG(
     default_args=default_args,
     schedule_interval='0 0 * * *', 
     start_date=days_ago(1),
-    catchup=False,
+    catchup=False
 )
 
 load_data = SnowflakeOperator(
