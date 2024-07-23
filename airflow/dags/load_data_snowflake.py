@@ -219,7 +219,7 @@ load_data = SnowflakeOperator(
     sql="""
     USE DATABASE northwind;
 
-    CREATE OR REPLACE TEMPORARY TABLE staging_employees_territories LIKE raw.employees;
+    CREATE OR REPLACE TEMPORARY TABLE staging_employee_territories LIKE raw.employees;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_employees_territories
