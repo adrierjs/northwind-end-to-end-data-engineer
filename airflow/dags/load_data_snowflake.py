@@ -1,5 +1,7 @@
 from airflow import DAG
 from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
+from airflow.providers.snowflake.hooks.snowflake import SnowflakeHook
+from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 from airflow.utils.dates import days_ago
 import requests
@@ -44,7 +46,14 @@ dag = DAG(
     catchup=False
 )
 
-load_data = SnowflakeOperator(
+join_task = PythonOperator(
+    task_id='join_task',
+    python_callable=lambda: print("join"),
+    dag=dag,
+    snowflake_conn_id='snowflake_connection'
+)
+
+SnowflakeOperator(
     task_id='load_and_merge_categories',
     sql="""
 
@@ -71,9 +80,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_customers',
     sql="""
     USE DATABASE northwind;
@@ -111,9 +120,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_customer_customer_demo',
     sql="""
     USE DATABASE northwind;
@@ -140,9 +149,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_customer_demographics',
     sql="""
     USE DATABASE northwind;
@@ -169,9 +178,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_employees',
     sql="""
       USE DATABASE northwind;
@@ -212,9 +221,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_employee_territories',
     sql="""
     USE DATABASE northwind;
@@ -240,9 +249,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_orders',
     sql="""
     USE DATABASE northwind;
@@ -279,9 +288,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_order_details',
     sql="""
     USE DATABASE northwind;
@@ -309,9 +318,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_products',
     sql="""
     USE DATABASE northwind;
@@ -345,9 +354,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_region',
     sql="""
     USE DATABASE northwind;
@@ -372,9 +381,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_shippers',
     sql="""
     USE DATABASE northwind;
@@ -400,9 +409,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_suppliers',
     sql="""
     USE DATABASE northwind;
@@ -437,9 +446,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_territories',
     sql="""
     USE DATABASE northwind;
@@ -465,9 +474,9 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data = SnowflakeOperator(
+SnowflakeOperator(
     task_id='load_and_merge_us_states',
     sql="""
      USE DATABASE northwind;
@@ -494,6 +503,6 @@ load_data = SnowflakeOperator(
     """,
     snowflake_conn_id='snowflake_connection',
     dag=dag,
-)
+) >> join_task
 
-load_data 
+join_task 
