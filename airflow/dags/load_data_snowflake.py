@@ -29,6 +29,8 @@ def send_to_discord(context):
         print("Notificação enviada com sucesso.")
     except requests.exceptions.RequestException as e:
         print(f"Falha ao enviar notificação ao Discord: {e}")
+
+bucket_name = Variable.get("bucket_name")
     
 default_args = {
     'owner': 'airflow',
@@ -49,20 +51,18 @@ dag = DAG(
 join_task = PythonOperator(
     task_id='join_task',
     python_callable=lambda: print("join"),
-    dag=dag,
-    snowflake_conn_id='snowflake_connection'
+    dag=dag
 )
 
 SnowflakeOperator(
     task_id='load_and_merge_categories',
-    sql="""
-
+    sql=f"""
     USE DATABASE northwind;
     CREATE OR REPLACE TEMPORARY TABLE staging_categories LIKE raw.categories;
 
     -- Criação de tabela temporária 
     COPY INTO staging_categories
-    FROM 's3://desafio-indicium/northwind/categories.csv'
+    FROM 's3://{bucket_name}/northwind/categories.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -79,17 +79,17 @@ SnowflakeOperator(
     source.description, source.picture);
     """,
     snowflake_conn_id='snowflake_connection',
-    dag=dag,
+    dag=dag 
 ) >> join_task
 
 SnowflakeOperator(
     task_id='load_and_merge_customers',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
     CREATE OR REPLACE TEMPORARY TABLE staging_customers LIKE raw.customers;
 
     COPY INTO staging_customers
-    FROM 's3://desafio-indicium/northwind/customers.csv'
+    FROM 's3://{bucket_name}/northwind/customers.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -124,14 +124,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_customer_customer_demo',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_customer_customer_demo LIKE raw.customer_customer_demo;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_customer_customer_demo
-    FROM 's3://desafio-indicium/northwind/customer_customer_demo.csv'
+    FROM 's3://{bucket_name}/northwind/customer_customer_demo.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -153,14 +153,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_customer_demographics',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_customer_demographics LIKE raw.customer_demographics;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_customer_demographics
-    FROM 's3://desafio-indicium/northwind/customer_customer_demographics.csv'
+    FROM 's3://{bucket_name}/northwind/customer_customer_demographics.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -182,14 +182,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_employees',
-    sql="""
+    sql=f"""
       USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_employees LIKE raw.employees;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_employees
-    FROM 's3://desafio-indicium/northwind/employees.csv'
+    FROM 's3://{bucket_name}/northwind/employees.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -225,13 +225,13 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_employee_territories',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
     
     CREATE OR REPLACE TEMPORARY TABLE staging_employee_territories LIKE raw.employee_territories;
 
     COPY INTO staging_employee_territories
-    FROM 's3://desafio-indicium/northwind/employee_territories.csv'
+    FROM 's3://{bucket_name}/northwind/employee_territories.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -253,14 +253,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_orders',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_orders LIKE raw.orders;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_orders
-    FROM 's3://desafio-indicium/northwind/orders.csv'
+    FROM 's3://{bucket_name}/northwind/orders.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -292,14 +292,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_order_details',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_order_details LIKE raw.order_details;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_order_details
-    FROM 's3://desafio-indicium/northwind/order_details.csv'
+    FROM 's3://{bucket_name}/northwind/order_details.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -322,14 +322,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_products',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_products LIKE raw.products;
 
     -- Carregar dados na tabela de staging
       COPY INTO staging_products
-    FROM 's3://desafio-indicium/northwind/products.csv'
+    FROM 's3://{bucket_name}/northwind/products.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -358,14 +358,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_region',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_region LIKE raw.region;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_region
-    FROM 's3://desafio-indicium/northwind/region.csv'
+    FROM 's3://{bucket_name}/northwind/region.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -385,14 +385,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_shippers',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_shippers LIKE raw.shippers;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_shippers
-    FROM 's3://desafio-indicium/northwind/shippers.csv'
+    FROM 's3://{bucket_name}/northwind/shippers.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -413,14 +413,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_suppliers',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_suppliers LIKE raw.suppliers;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_suppliers
-    FROM 's3://desafio-indicium/northwind/suppliers.csv'
+    FROM 's3://{bucket_name}/northwind/suppliers.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -450,14 +450,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_territories',
-    sql="""
+    sql=f"""
     USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_territories LIKE raw.territories;
 
         -- Carregar dados na tabela de staging
     COPY INTO staging_territories
-    FROM 's3://desafio-indicium/northwind/territories.csv'
+    FROM 's3://{bucket_name}/northwind/territories.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -478,14 +478,14 @@ SnowflakeOperator(
 
 SnowflakeOperator(
     task_id='load_and_merge_us_states',
-    sql="""
+    sql=f"""
      USE DATABASE northwind;
 
     CREATE OR REPLACE TEMPORARY TABLE staging_us_states LIKE raw.us_states;
 
     -- Carregar dados na tabela de staging
     COPY INTO staging_us_states
-    FROM 's3://desafio-indicium/northwind/us_states.csv'
+    FROM 's3://{bucket_name}/northwind/us_states.csv'
     STORAGE_INTEGRATION = s3_int
     FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1 FIELD_DELIMITER = ';');
 
@@ -502,7 +502,7 @@ SnowflakeOperator(
         VALUES (source.state_id, source.state_name, source.state_abbr, source.state_region);
     """,
     snowflake_conn_id='snowflake_connection',
-    dag=dag,
+    dag=dag
 ) >> join_task
 
-join_task 
+join_task
